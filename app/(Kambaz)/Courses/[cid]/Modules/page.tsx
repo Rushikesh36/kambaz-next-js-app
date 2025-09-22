@@ -3,9 +3,10 @@ export default function Modules() {
         <div>
             <button>Collapse All</button>
             <button>View Progress</button>
-            <button>Publish All</button>
+            <select name="" id="">
+                <option value="Publish All">Publish All</option>
+            </select>
             <button>+ Module</button>
-            <hr />
             {/* Implement Collapse All button, View Progress button, etc. */}
             <ul id="wd-modules">
                 {/* Module 1 */}
