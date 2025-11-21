@@ -6,7 +6,7 @@ import { RootState } from "../../../store";
 
 export default function Home() {
     const { currentUser } = useSelector((state: RootState) => state.accountReducer);
-    const isFaculty = currentUser?.role === "FACULTY";
+    const isFaculty = (currentUser as any)?.role === "FACULTY";
 
     return (
         <div id="wd-home">

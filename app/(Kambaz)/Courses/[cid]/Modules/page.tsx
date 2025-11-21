@@ -24,7 +24,7 @@ export default function Modules() {
   const { currentUser } = useSelector(
     (state: RootState) => state.accountReducer
   );
-  const isFaculty = currentUser?.role === "FACULTY";
+  const isFaculty = (currentUser as any)?.role === "FACULTY";
   console.log("calyx", isFaculty);
   const dispatch = useDispatch();
 
