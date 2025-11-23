@@ -13,15 +13,20 @@ import { RootState } from "../../../store";
 
 export default function Modules() {
   const params = useParams();
-  // ensure we always have a string
   const cidRaw = (params as any).cid as string | string[] | undefined;
   const cid = Array.isArray(cidRaw) ? cidRaw[0] : cidRaw ?? "";
 
   const [moduleName, setModuleName] = useState("");
   const { modules } = useSelector((state: RootState) => state.modulesReducer);
+  const currentUser = useSelector(
+    (state: RootState) => state.accountReducer.currentUser
+  ) as any;
+  const isFaculty = currentUser?.role === "FACULTY";
+
   const dispatch = useDispatch();
 
   const onCreateModuleForCourse = async () => {
+    if (!isFaculty) return;
     if (!cid) return;
     const newModule = { name: moduleName, course: cid };
     const module = await client.createModuleForCourse(cid, newModule);
@@ -29,6 +34,7 @@ export default function Modules() {
   };
 
   const onRemoveModule = async (moduleId: string) => {
+    if (!isFaculty) return;
     await client.deleteModule(moduleId);
     dispatch(setModules(modules.filter((m: any) => m._id !== moduleId)));
   };
@@ -40,6 +46,7 @@ export default function Modules() {
   };
 
   const onUpdateModule = async (module: any) => {
+    if (!isFaculty) return;
     await client.updateModule(module);
     const newModules = modules.map((m: any) =>
       m._id === module._id ? module : m
@@ -53,16 +60,16 @@ export default function Modules() {
 
   return (
     <div>
-      <ModulesControls
-        moduleName={moduleName}
-        setModuleName={setModuleName}
-        addModule={onCreateModuleForCourse}
-      />
+      {isFaculty && (
+        <ModulesControls
+          moduleName={moduleName}
+          setModuleName={setModuleName}
+          addModule={onCreateModuleForCourse}
+        />
+      )}
 
-      <br />
-      <br />
-      <br />
-      <br />
+      <br /><br /><br /><br />
+
       <ListGroup className="rounded-0" id="wd-modules">
         {modules.map((module: any) => (
           <ListGroupItem
@@ -70,9 +77,11 @@ export default function Modules() {
             className="wd-module p-0 mb-5 fs-5 border-gray"
           >
             <div className="wd-title p-3 ps-2 bg-secondary">
-              <BsGripVertical className="me-2 fs-3" />{" "}
+              <BsGripVertical className="me-2 fs-3" />
+
               {!module.editing && module.name}
-              {module.editing && (
+
+              {module.editing && isFaculty && (
                 <FormControl
                   className="w-50 d-inline-block"
                   onChange={(e) =>
@@ -88,12 +97,16 @@ export default function Modules() {
                   defaultValue={module.name}
                 />
               )}
-              <ModuleControlButtons
-                moduleId={module._id}
-                deleteModule={(moduleId) => onRemoveModule(moduleId)}
-                editModule={(moduleId) => dispatch(editModule(moduleId))}
-              />
+
+              {isFaculty && (
+                <ModuleControlButtons
+                  moduleId={module._id}
+                  deleteModule={(id) => onRemoveModule(id)}
+                  editModule={(id) => dispatch(editModule(id))}
+                />
+              )}
             </div>
+
             {module.lessons && (
               <ListGroup className="wd-lessons rounded-0">
                 {module.lessons.map((lesson: any) => (
@@ -101,8 +114,11 @@ export default function Modules() {
                     key={lesson._id}
                     className="wd-lesson p-3 ps-1"
                   >
-                    <BsGripVertical className="me-2 fs-3" /> {lesson.name}{" "}
-                    <LessonControlButtons />
+                    <BsGripVertical className="me-2 fs-3" />
+
+                    {lesson.name}
+
+                    {isFaculty && <LessonControlButtons />}
                   </ListGroupItem>
                 ))}
               </ListGroup>
