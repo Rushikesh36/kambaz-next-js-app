@@ -9,7 +9,12 @@ export default function Labs() {
                 <h3>Course Code: CS 5610</h3>
                 <h3>
                     <a href="https://github.com/Rushikesh36/kambaz-next-js-app"> 
-                        Github Link
+                        Github Link Front end
+                    </a>
+                </h3>
+                <h3>
+                    <a href="https://github.com/Rushikesh36/kambaz-node-server-app"> 
+                        Github Link Node server                   
                     </a>
                 </h3>
             </div>
