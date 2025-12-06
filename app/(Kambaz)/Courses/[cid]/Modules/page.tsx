@@ -25,37 +25,87 @@ export default function Modules() {
 
   const dispatch = useDispatch();
 
+  const fetchModules = async () => {
+    if (!cid) return;
+    try {
+      const modulesFromServer = await client.findModulesForCourse(cid);
+      console.log("Fetched modules:", modulesFromServer);
+      dispatch(setModules(modulesFromServer));
+    } catch (error) {
+      console.error("Failed to fetch modules:", error);
+    }
+  };
+
   const onCreateModuleForCourse = async () => {
     if (!isFaculty) return;
     if (!cid) return;
-    const newModule = { name: moduleName, course: cid };
-    const module = await client.createModuleForCourse(cid, newModule);
-    dispatch(setModules([...modules, module]));
+    if (!moduleName.trim()) {
+      alert("Please enter a module name");
+      return;
+    }
+
+    try {
+      const newModule = { name: moduleName, course: cid };
+      const module = await client.createModuleForCourse(cid, newModule);
+      dispatch(setModules([...modules, module]));
+      setModuleName(""); // Clear input after successful creation
+    } catch (error) {
+      console.error("Failed to create module:", error);
+      alert("Failed to create module. Please try again.");
+    }
   };
 
   const onRemoveModule = async (moduleId: string) => {
     if (!isFaculty) return;
-    await client.deleteModule(moduleId);
-    dispatch(setModules(modules.filter((m: any) => m._id !== moduleId)));
-  };
 
-  const fetchModules = async () => {
-    if (!cid) return;
-    const modulesFromServer = await client.findModulesForCourse(cid);
-    dispatch(setModules(modulesFromServer));
+    try {
+      console.log("Attempting to delete module:", moduleId);
+      await client.deleteModule(cid, moduleId);
+      // Only update UI if API call succeeds
+      dispatch(setModules(modules.filter((m: any) => m._id !== moduleId)));
+    } catch (error: any) {
+      console.error("Failed to delete module:", error);
+
+      if (error.response?.status === 404) {
+        // Module doesn't exist - remove from UI anyway and refetch to sync
+        alert("This module no longer exists in the database. Refreshing...");
+        fetchModules(); // Re-sync with server
+      } else {
+        alert("Failed to delete module. Please try again.");
+      }
+    }
   };
 
   const onUpdateModule = async (module: any) => {
     if (!isFaculty) return;
-    await client.updateModule(module);
-    const newModules = modules.map((m: any) =>
-      m._id === module._id ? module : m
-    );
-    dispatch(setModules(newModules));
+
+    try {
+      console.log("Attempting to update module:", module);
+      await client.updateModule(cid, module);
+      // Only update UI if API call succeeds
+      const newModules = modules.map((m: any) =>
+        m._id === module._id ? module : m
+      );
+      dispatch(setModules(newModules));
+    } catch (error: any) {
+      console.error("Failed to update module:", error);
+
+      if (error.response?.status === 404) {
+        // Module doesn't exist - refetch to sync
+        alert("This module no longer exists in the database. Refreshing...");
+        fetchModules(); // Re-sync with server
+      } else {
+        alert("Failed to update module. Please try again.");
+      }
+
+      // Revert the editing state on error
+      dispatch(editModule(module._id));
+    }
   };
 
   useEffect(() => {
     fetchModules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cid]);
 
   return (
@@ -68,7 +118,10 @@ export default function Modules() {
         />
       )}
 
-      <br /><br /><br /><br />
+      <br />
+      <br />
+      <br />
+      <br />
 
       <ListGroup className="rounded-0" id="wd-modules">
         {modules.map((module: any) => (
